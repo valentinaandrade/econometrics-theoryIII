@@ -1,1 +1,1 @@
-# econometrics-theoryIII
+# Econometrics Theory III
