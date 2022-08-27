@@ -13,6 +13,7 @@ library(lubridate)
 library(patchwork)
 library(forecast) # autoplot, auto.arima
 library(tseries) # Dickey-Fuller
+library(ggfortify)
 library(xts)
 library(readxl)
 library(showtext)
@@ -38,7 +39,9 @@ tidy_adf_test <- function(serie){
   # https://www.r-bloggers.com/2021/12/augmented-dickey-fuller-adf-test-in-r/
   # https://rstudio-pubs-static.s3.amazonaws.com/843574_4aec57ae7a0d43ff8d0c152729f0ed2c.html#prueba-de-ra%C3%ADz-unitaria-de-dickey-fuller
   
-  adf.test(serie) |> 
+  serie |> 
+    na.omit() |> 
+    adf.test() |> 
     broom::tidy() |> 
     mutate(
       `resultado 95%` = ifelse(
@@ -68,7 +71,7 @@ modelos_arma <- function(serie, ar_orders = 1:6, ma_orders = 1:6){
       
       cli::cli_alert_info("Ajustando ARMA({ar}, {ma})")
       
-      ajuste <- Arima(serie, order = c(ar, 0, ma), include.mean = TRUE)
+      ajuste <- Arima(serie, order = c(ar, 0, ma), include.mean = TRUE, method = "ML")
       
       # autoplot(serie)
       # autoplot(ajuste$residuals)
@@ -143,7 +146,6 @@ plot_ajuste <- function(modelo){
 }
 ```
 
-
 ## Datos
 
 ```{r data}
@@ -181,13 +183,20 @@ ggplot(datos_2020_long) +
 ```
 
 
-## `ipsa_sa`
+## `infsv_sa`
 
 ```{r}
 nombre_colmm <- "infsv_sa"
 nombre_serie <- "El nombre bonito"
 
 serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
+
+autoplot(serie) + 
+  labs(x = "Fecha", y = nombre_serie)
+
+knitr::kable(tidy_adf_test(serie))
+
+serie <- diff(serie)
 
 autoplot(serie) + 
   labs(x = "Fecha", y = nombre_serie)
@@ -214,14 +223,18 @@ posee AIC de `r modelo$aic`. Los parámetros estimados son:
 
 
 ```{r}
-knitr::kable(modelo_summary(modelo))
+knitr::kable(modelo_summary(modelo) |> filter(estimate != 0))
 ```
 
 Los residuos presentan los siguientes ACF, PACF:
 
 ```{r}
 autoplot_acf_pact(modelo$residuals) +
-  plot_annotation(title = str_glue("Modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+```
+
+```{r}
+ggtsdiag(modelo)
 ```
 
 ```{r}
@@ -229,6 +242,122 @@ plot_ajuste(modelo)
 ```
 
 
+## `ipsa_sa`
 
-### `ipsa_sa`
+```{r}
+nombre_colmm <- "ipsa_sa"
+nombre_serie <- "El nombre bonito"
 
+serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
+
+autoplot(serie) + 
+  labs(x = "Fecha", y = nombre_serie)
+
+knitr::kable(tidy_adf_test(serie))
+
+# serie <- diff(serie)
+# 
+# autoplot(serie) +
+#   labs(x = "Fecha", y = nombre_serie)
+# 
+# knitr::kable(tidy_adf_test(serie))
+
+autoplot_acf_pact(serie) + 
+  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+
+modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) |> 
+  arrange(AIC) |> 
+  head(12) |> 
+  knitr::kable()
+
+AR <- 6
+MA <- 6
+
+modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
+modelo
+```
+
+El modelo seleccionado es el `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
+posee AIC de `r modelo$aic`. Los parámetros estimados son:
+
+
+```{r}
+knitr::kable(modelo_summary(modelo) |> filter(estimate != 0))
+```
+
+Los residuos presentan los siguientes ACF, PACF:
+
+```{r}
+autoplot_acf_pact(modelo$residuals) +
+  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+```
+
+```{r}
+ggtsdiag(modelo, gof.lag = 24)
+```
+
+```{r}
+plot_ajuste(modelo)
+```
+
+
+## `tcn_sa`
+
+```{r}
+nombre_colmm <- "tcn_sa"
+nombre_serie <- "El nombre bonito"
+
+serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
+
+autoplot(serie) + 
+  labs(x = "Fecha", y = nombre_serie)
+
+knitr::kable(tidy_adf_test(serie))
+
+# serie <- diff(serie)
+# 
+# autoplot(serie) +
+#   labs(x = "Fecha", y = nombre_serie)
+# 
+# knitr::kable(tidy_adf_test(serie))
+
+autoplot_acf_pact(serie) + 
+  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+
+modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) |> 
+  arrange(AIC) |> 
+  head(12) |> 
+  knitr::kable()
+
+AR <- 3
+MA <- 2
+
+modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
+modelo
+
+# auto.arima(serie)
+
+```
+
+El modelo seleccionado es el `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
+posee AIC de `r modelo$aic`. Los parámetros estimados son:
+
+
+```{r}
+knitr::kable(modelo_summary(modelo) |> filter(estimate != 0))
+```
+
+Los residuos presentan los siguientes ACF, PACF:
+
+```{r}
+autoplot_acf_pact(modelo$residuals) +
+  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+```
+
+```{r}
+ggtsdiag(modelo, gof.lag = 24)
+```
+
+```{r}
+plot_ajuste(modelo)
+```
