@@ -2,19 +2,15 @@
 * Tarea 1. Teoría Econometrica III
 * Autor: Camilo Pérez N.
 ********************************************************************************
-
 clear 
 clear all
 set more off
-global path "C:\Users\Camilo\Documents\PUC\2 Semestre\Econometria III\Tareas\1"
-global pathdat "$path\datos"
-global pathgr "$path\graficos"
-global patht "$path\tablas"
+
 
 ********************************************************************************
 * Pregunta 7: empírica
 ********************************************************************************
-import excel "$pathdat\datos.xlsx", sheet("data") cellrange(A1:I400) firstrow
+import excel "datos.xlsx", sheet("data") cellrange(A1:I400) firstrow
 
 rename Periodo date
 label var inf_sa "Inflación total"
