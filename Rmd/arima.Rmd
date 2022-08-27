@@ -205,7 +205,7 @@ modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) |>
 AR <- 6
 MA <- 6
 
-modelo <- Arima(serie,  order = c(4, 0, 0), include.mean = TRUE)
+modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
 modelo
 ```
 
