@@ -1,0 +1,234 @@
+---
+title: "Analsis Series"
+output: html_document
+date: "2022-08-27"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+library(forecast) # autoplot, auto.arima
+library(tseries) # Dickey-Fuller
+library(xts)
+library(readxl)
+library(showtext)
+
+theme_set(theme_minimal(base_size = 12))
+theme_set(theme_minimal(base_size = 14))
+font_add_google("IBM Plex Sans", "ibm")
+showtext_auto()
+```
+
+```{r, funciones, include=FALSE}
+get_time_series <- function(data, time, value){
+  # https://stackoverflow.com/questions/11422493/using-r-how-do-i-create-a-time-series-object-with-dates 
+  xts(
+    x = pull(data, value),
+    order.by = pull(data, time),
+    frequency = 12
+  ) 
+}
+
+tidy_adf_test <- function(serie){
+  # ?adf.test
+  # https://www.r-bloggers.com/2021/12/augmented-dickey-fuller-adf-test-in-r/
+  # https://rstudio-pubs-static.s3.amazonaws.com/843574_4aec57ae7a0d43ff8d0c152729f0ed2c.html#prueba-de-ra%C3%ADz-unitaria-de-dickey-fuller
+  
+  adf.test(serie) |> 
+    broom::tidy() |> 
+    mutate(
+      `resultado 95%` = ifelse(
+        p.value < 0.05,
+        "Es I(0),  no unit-root",
+        "Existe unit-root")
+    ) |> 
+    rename(`Valor-p` = p.value) |> 
+    select(method, `Valor-p`, everything())
+}
+
+autoplot_acf_pact <- function(serie){
+  
+  p1 <- ggAcf(serie) + labs(title = NULL)
+  p2 <- ggPacf(serie) + labs(title = NULL)
+  
+  p1 + p2
+  
+}
+
+modelos_arma <- function(serie, ar_orders = 1:6, ma_orders = 1:6){
+  
+  # test nombre_colmm <- "infsv_sa"
+  
+  modelos <- crossing(ar = ar_orders, ma = ma_orders) |> 
+    pmap_df(function(ar = 6, ma = 3){
+      
+      cli::cli_alert_info("Ajustando ARMA({ar}, {ma})")
+      
+      ajuste <- Arima(serie, order = c(ar, 0, ma), include.mean = TRUE)
+      
+      # autoplot(serie)
+      # autoplot(ajuste$residuals)
+      
+      # ggAcf(serie)
+      # ggAcf(ajuste$residuals)
+      
+      # tsdiag(ajuste)
+      
+      output <- broom::glance(ajuste)
+      
+      output <- select(output, -nobs)
+      
+      output
+      
+      Box.test(serie, type = "Ljung-Box")
+      Box.test(ajuste$residuals, type = "Ljung-Box")
+      
+      # tsdiag(ajuste)
+      
+      test_residuos <- Box.test(ajuste$residuals, type = "Ljung-Box")
+      test_residuos <- broom::glance(test_residuos)
+      
+      output <- output |> 
+        add_column(`Box-Ljung test residuos p value` = test_residuos$p.value) 
+      
+      output <- output |> 
+        mutate(`Ajuste` = str_glue("ARMA({ar}, {ma})"), .before = 1)
+      
+      output
+      
+    })
+  
+  modelos |> arrange(desc(`Box-Ljung test residuos p value`))
+  modelos |> arrange(sigma)
+  modelos |> arrange(desc(logLik))
+  modelos |> arrange(desc(BIC))
+  modelos |> arrange(desc(AIC))
+  
+  modelos <- modelos |>
+    arrange(desc(`Box-Ljung test residuos p value`))
+  
+  auto.arima(serie, max.p = 6, max.q = 6, stepwise = FALSE)
+  
+  modelos
+  
+}
+
+modelo_summary <- function(fit){
+  
+  bind_cols(broom::tidy(fit), confint(fit))
+  
+}
+
+plot_ajuste <- function(modelo){
+  
+  modelo$x |> 
+    as.data.frame() |> 
+    set_names("serie") |> 
+    rownames_to_column("periodo") |> 
+    as_tibble() |> 
+    mutate(
+      periodo = ymd(periodo),
+      ajuste = fitted(modelo)
+      ) |> 
+    pivot_longer(cols = -periodo) |> 
+    
+    ggplot() +
+    geom_line(aes(periodo, value, color = name)) +
+    scale_color_viridis_d(begin = 0.3, end = 0.8)
+    
+}
+```
+
+
+## Datos
+
+```{r data}
+datos <- readxl::read_excel(here::here("input/datos.xlsx"))
+datos <- janitor::clean_names(datos)
+
+datos <- datos |>
+  mutate(periodo = as.Date(periodo))
+
+datos_long <- pivot_longer(datos, cols = -periodo)
+
+ggplot(datos_long) +
+  
+  geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2020-01-01")),
+    color = "darkred",
+    size = 1.2
+    ) +
+  
+  geom_line(aes(periodo, value), color = "gray60") +
+  
+  facet_wrap(vars(name), scales = "free_y") 
+
+datos_2020 <- datos |> 
+  filter(between(periodo, ymd("2000-01-01"), ymd("2020-01-01")))
+
+datos_2020_long <- datos_long |> 
+  filter(between(periodo, ymd("2000-01-01"), ymd("2020-01-01")))
+
+
+ggplot(datos_2020_long) +
+  geom_line(aes(periodo, value), color = "gray60") +
+  facet_wrap(vars(name), scales = "free_y") 
+```
+
+
+## `ipsa_sa`
+
+```{r}
+nombre_colmm <- "infsv_sa"
+nombre_serie <- "El nombre bonito"
+
+serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
+
+autoplot(serie) + 
+  labs(x = "Fecha", y = nombre_serie)
+
+knitr::kable(tidy_adf_test(serie))
+
+autoplot_acf_pact(serie) + 
+  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+
+modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) |> 
+  arrange(AIC) |> 
+  head(12) |> 
+  knitr::kable()
+
+AR <- 6
+MA <- 6
+
+modelo <- Arima(serie,  order = c(4, 0, 0), include.mean = TRUE)
+modelo
+```
+
+El modelo seleccionado es el `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
+posee AIC de `r modelo$aic`. Los parámetros estimados son:
+
+
+```{r}
+knitr::kable(modelo_summary(modelo))
+```
+
+Los residuos presentan los siguientes ACF, PACF:
+
+```{r}
+autoplot_acf_pact(modelo$residuals) +
+  plot_annotation(title = str_glue("Modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+```
+
+```{r}
+plot_ajuste(modelo)
+```
+
+
+
+### `ipsa_sa`
+
