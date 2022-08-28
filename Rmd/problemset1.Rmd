@@ -201,10 +201,7 @@ ggplot(datos_long) +
 
 *Figure 1*. Series `infsv_sa` (IPC), `IPSA_sa` (IPSA), `tcn_sa` (Exchange Rate CLP/USD) (1990- 2022)
 
-
-
-
-As can be shown in *Figure 1*, inflation (measured by the consumer price index) presents a clear trend before 2001. This price growth trend was stabilized after the Central Bank set a target of around 3% inflation and a policy of nominalization [(Fuentes et al, 2003)](https://si2.bcentral.cl/public/pdf/documentos-trabajo/pdf/dtbc197.pdf). Similarly, since 2020, due to the health crisis caused by the COVID-19 pandemic, the consequences have also been reflected in an increase in the cost of living. 
+Pese a que las series utilizadas son las desestacionalizadas, as can be shown in *Figure 1*, inflation (measured by the consumer price index) presents a clear trend before 2001. This price growth trend was stabilized after the Central Bank set a target of around 3% inflation and a policy of nominalization [(Fuentes et al, 2003)](https://si2.bcentral.cl/public/pdf/documentos-trabajo/pdf/dtbc197.pdf). Similarly, since 2020, due to the health crisis caused by the COVID-19 pandemic, the consequences have also been reflected in an increase in the cost of living. 
 
 In order to isolate the trends mentioned above, we have chosen to limit the period of analysis from 2001 to 2020, both for inflation and for the other variables of interest, in order to make the models more comparable. We will use the series shown in *Figure 2* for the following steps.   
 
@@ -230,58 +227,78 @@ ggplot(datos_2020_long) +
 
 ```{r}
 nombre_colmm <- "infsv_sa"
-nombre_serie <- "Figure 3. Inflation in Chile (2001 - 2020"
+nombre_serie <- "Inflation %"
 
 serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
 
 autoplot(serie) + 
-  labs(x = "Date", y = nombre_serie)
+  labs(x = "Date", y = nombre_serie, caption = "Figure 3")
 
-knitr::kable(tidy_adf_test(serie))
+```
 
+First, in Figure 3 we have a clear representation of an increasing trend in the price level. As we mentioned at the beginning, ARMA models work on the basis of non-stationary series, but graphically it seems that inflation still has a trend component. We will use the Dickey Fuller unit root test to conjecture if there is evidence of this trend. Formally, 
+
+$$\triangle Y_t = \alpha + \phi y_{t-1}+ \varepsilon$$
+
+$H_0: \phi = 0\Rightarrow$ Presence of stochastic trend in the observations.
+
+$H_1: \phi <0 \Rightarrow$: No presence of stochastic trend in the observations.
+
+```{r}
+knitr::kable(tidy_adf_test(serie), caption = "Table 1. Dickey-Fuller Test for Inflation series")
+```
+
+Table 1 shows that with 95% confidence, we cannot reject the null hypothesis. That is, it is likely to say that there is a stochastic trend in this series. Our calculations show that it is a trend in means so it can be solved with a simple differencing (if it were a trend in variances a logarithmic transformation would be appropriate). After the transformation we plot the series in *Figure 4*.Table 2 shows that we can now reject the null hypothesis with 95% confidence.
+```{r}
 serie <- diff(serie)
 
 autoplot(serie) + 
-  labs(x = "Fecha", y = nombre_serie)
+  labs(x = "Fecha", y = nombre_serie, caption = "Figure 4.")
 
-knitr::kable(tidy_adf_test(serie), caption = "Table 1")
+knitr::kable(tidy_adf_test(serie), caption = "Table 2. Dickey-Fuller Test for diff(inflation) ")
 
+```
+
+We will now explore the order of the AR and MA processes.  On the one hand, the ACF gives us information about the order $q$ of the MA. The figure is not very clear about whether the value is at 1 or much higher (there are values near to 14). On the other hand, the (partial) PACF gives us the p-value, i.e., the order of the AR(p) process. The figure shows with much more certainty that the process "dies" between 3 and 5. Evidently the value 5 could be possible only because of a convenience of the size of the interval.
+
+
+```{r}
 autoplot_acf_pact(serie) + 
-  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+  plot_annotation(title = str_glue("Figure 5. {nombre_serie}: ACF y PACF"))
 
-modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) %>% 
+modelos_arma(serie, ar_orders = 1:5, ma_orders = 1:5) %>% 
   arrange(AIC) %>% 
   head(12) %>% 
-  knitr::kable()
+  knitr::kable(., caption = "Table 3. ARMA(p,q) Iteration")
 
-AR <- 6
-MA <- 6
+AR <- 3
+MA <- 4
 
 modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
 ```
 
-We select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
-posee AIC de `r modelo$aic`. The estimated parameters are:
+A function has been created to order the models according to their fit considering AIC (information criterion), Box-Ljung which studies that any series of autocorrelations is non-zero (Portmanteau test), logLik. Taking this information, the function penalizes the ARMAs that have higher order p+q. That is why  we select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`which
+has AIC of `r modelo$aic`. The estimated parameters are:
 
 ```{r}
 knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0))
 ```
 
-Auto-correlation functions are represented in ACF and PACF, to figure the order of MA and AR models, respectively.
-
-```{r}
-autoplot_acf_pact(modelo$residuals) +
-  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
-```
+Auto-correlation functions of residuals are represented in ACF. As can be seen, the correlogram "dies" at zero so it evidently reveals to be white noise. This tells us that the residuals have no structure and therefore the model has been well specified and does not store information about the series.  
 
 ```{r}
 ggtsdiag(modelo)
 ```
 
+The Ljung Box statistical significance gives us a robustness test: autocorrelation does not occur for any lag of the series (see order equal to 10).
+
+
 ```{r}
 plot_ajuste(modelo)
 ```
 
+
+The last step of Box-Jenkins corresponds to prediction. As we can see in the figure presented, the values predicted by the ARMA model follow very closely the empirical series.
 
 ## `IPSA`
 
