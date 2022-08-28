@@ -10,7 +10,7 @@ All the codes, projects and functions created can be downloaded from the [follow
 
 # Problem Sets
 
-- [Problem Set N°1](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset1.html)
+- [Problem Set N°1](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/arima.html)
   - [Report](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset1.html)
   - [Replication codes](https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/arima.Rmd)
   - [Proof of theorems](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/docs/problems/problemset1.pdf)
