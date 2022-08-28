@@ -281,142 +281,153 @@ A function has been created to order the models according to their fit consideri
 has AIC of `r modelo$aic`. The estimated parameters are:
 
 ```{r}
-knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0))
+knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0), caption = "Table 4. ARMA estimation")
 ```
 
 Auto-correlation functions of residuals are represented in ACF. As can be seen, the correlogram "dies" at zero so it evidently reveals to be white noise. This tells us that the residuals have no structure and therefore the model has been well specified and does not store information about the series.  
 
 ```{r}
-ggtsdiag(modelo)
+ggtsdiag(modelo) + labs(caption = "Figure 6. Model Diagnosis")
 ```
 
-The Ljung Box statistical significance gives us a robustness test: autocorrelation does not occur for any lag of the series (see order equal to 10).
+The Ljung Box statistical significance gives us a robustness test: autocorrelation does not occur for any lag of the series (see order equal to 10 in figure 6 below).
 
 
 ```{r}
-plot_ajuste(modelo)
+plot_ajuste(modelo) + labs(caption = "Figure 7. Predictions")
 ```
 
 
 The last step of Box-Jenkins corresponds to prediction. As we can see in the figure presented, the values predicted by the ARMA model follow very closely the empirical series.
 
-## `IPSA`
+## 2. `IPSA`
 
 ```{r}
 nombre_colmm <- "ipsa_sa"
-nombre_serie <- "El nombre bonito"
+nombre_serie <- "IPSA"
 
 serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
 
 autoplot(serie) + 
-  labs(x = "Fecha", y = nombre_serie)
+  labs(x = "Date", caption = "Figure 8. IPSA serie")
 
-knitr::kable(tidy_adf_test(serie))
+```
 
-# serie <- diff(serie)
-# 
-# autoplot(serie) +
-#   labs(x = "Fecha", y = nombre_serie)
-# 
-# knitr::kable(tidy_adf_test(serie))
+The IPSA series (Chile's main stock market index) is presented in Figure 8. As can be seen in Table 5, with a 95% confidence level, the null hypothesis can be rejected. Thus, there is evidence with a 5% error that there is no stochastic trend in the series presented. 
 
+```{r}
+knitr::kable(tidy_adf_test(serie), caption =  "Table 5. Dickey-Fuller test for IPSA")
+
+```
+
+Regarding the graphs showing the orders of the models, we say that neither of them show a "smooth" fall towards any order, and rather they are always within the confidence interval. They only appear outside the interval at order 12, which must show some annual memory of the series. Without taking into account the confidence intervals, it could be seen that the ACF and PACF orders are quite symmetrical (from the similarity of the figures). Thus, it is possible that the significant drop occurs after the order p,q > 3.
+
+```{r}
 autoplot_acf_pact(serie) + 
-  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+  plot_annotation(title = str_glue("Figure 9. {nombre_serie}: ACF y PACF"))
 
-modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) %>% 
+```
+
+*Table 6* shows the 12 best combinations of ARMA(p,q), and as mentioned before, a function has been created to order them in such a way as to rank them considering the number of parameters, AIC settings and residuals test above all. 
+
+```{r}
+
+modelos_arma(serie, ar_orders = 1:5, ma_orders = 1:5) %>% 
   arrange(AIC) %>% 
   head(12) %>% 
-  knitr::kable()
+  knitr::kable(., caption = "Table 6. ARMA(p,q) models-IPSA")
 
-AR <- 6
-MA <- 6
+AR <- 3
+MA <- 3
 
 modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
 ```
 
-We select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
-posee AIC de `r modelo$aic`. The estimated parameters are:
+We select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`, with AIC`r modelo$aic`. The estimated parameters are:
 
 
 ```{r}
-knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0))
+knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0), caption = "Table 7. ARMA(3,3) Summary")
 ```
 
-Auto-correlation functions of residuals are represented in ACF and PACF, to figure the order of MA and AR models, respectively.
-
-```{r}
-autoplot_acf_pact(modelo$residuals) +
-  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
-```
+Auto-correlation functions of residuals are represented in ACF. As can be seen, the correlogram "dies" at zero so it evidently reveals to be white noise. This tells us that the residuals have no structure and therefore the model has been well specified and does not store information about the series.  
 
 ```{r}
-ggtsdiag(modelo, gof.lag = 24)
+ggtsdiag(modelo, gof.lag = 24) + labs(caption = "Figure 9. Model Diagnosis IPSA")
 ```
 
+The Ljung Box statistical significance gives us a robustness test: autocorrelation does not occur for any lag of the series (see order equal to 24 in *Figure 9* below).
+
+
 ```{r}
-plot_ajuste(modelo)
+plot_ajuste(modelo) + labs(caption = "Figure 10. Predictions IPSA")
 ```
+
+Unlike the inflation series, the IPSA forecast does not follow the observed values as closely. The kurtosis of the curves is something that the forecasts fail to achieve elegantly. 
 
 
 ## `3. Exchange Rate`
 
+*Figure 11* shows the exchange rate from Chilean pesos to dollars. It shows only a large shock due to the 2008 crisis, but in general it remains around the average.  In Table 8 we prove that there is no conclusive evidence of unit root, so with 5% error there is no stochastic trend in this series
+
 ```{r}
 nombre_colmm <- "tcn_sa"
-nombre_serie <- "El nombre bonito"
+nombre_serie <- "Exchange rate (CLP/USD)"
 
 serie <- get_time_series(datos_2020, time = "periodo", value = nombre_colmm)
 
 autoplot(serie) + 
-  labs(x = "Fecha", y = nombre_serie)
+  labs(x = "Date", caption = "Figure 11. Exchange rate (CLP/USD)")
 
+```
+
+Regarding the orders of the models (*Figure 12*), at least these are clearer than in the case of IPSA. In this case it seems that the orders are not symmetric, although p > q. Now, it appears that both are close between 3 and 2, but neither correlogram is "smoothly decaying". 
+```{r}
 knitr::kable(tidy_adf_test(serie))
-
-# serie <- diff(serie)
-# 
-# autoplot(serie) +
-#   labs(x = "Fecha", y = nombre_serie)
-# 
-# knitr::kable(tidy_adf_test(serie))
-
 autoplot_acf_pact(serie) + 
-  plot_annotation(title = str_glue("{nombre_serie}: ACF y PACF"))
+  plot_annotation(title = str_glue("Figure 12. {nombre_serie}: ACF y PACF"))
+
+```
+
+In *Table 9* we see the selection of models, where we see the result of what was discussed in the previous figure, where precisely what we indicated before stands out: the pairs (3,2), (4,2) and (2,3) are those that lose less information, and less significant is their correlation tes of residuals (in 5,2 it is already 0.84).
+
+```{r}
 
 modelos_arma(serie, ar_orders = 1:6, ma_orders = 1:6) %>% 
   arrange(AIC) %>% 
   head(12) %>% 
-  knitr::kable()
+  knitr::kable(., caption = "Table 9. ARMA(p,q) Exchange RATE")
 
 AR <- 3
 MA <- 2
 
 modelo <- Arima(serie,  order = c(AR, 0, MA), include.mean = TRUE)
 
-# auto.arima(serie)
-
 ```
 
-We select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`, el cual
-posee AIC de `r modelo$aic`. The estimated parameters are:
+We select the model `r  str_glue("Modelo ARMA({AR}, {MA})")`, with `r modelo$aic`. The estimated parameters are:
 
 
 ```{r}
 knitr::kable(modelo_summary(modelo) %>% filter(estimate != 0))
 ```
 
-Auto-correlation functions of residuals are represented in ACF and PACF, to figure the order of MA and AR models, respectively.
+
+Auto-correlation functions of residuals (*Figure 13*) are represented in ACF. As can be seen, the correlogram "dies" at zero so it evidently reveals to be white noise. This tells us that the residuals have no structure and therefore the model has been well specified and does not store information about the series.  
 
 ```{r}
-autoplot_acf_pact(modelo$residuals) +
-  plot_annotation(title = str_glue("Residuos modelo ARMA({AR}, {MA}) {nombre_serie}: ACF y PACF"))
+ggtsdiag(modelo) + labs(caption = "Figure 13. Model Diagnosis")
 ```
 
-```{r}
-ggtsdiag(modelo, gof.lag = 24)
-```
+The Ljung Box statistical significance gives us a robustness test: autocorrelation does not occur for any lag of the series (see order equal to 10 in figure 13 below).
+
 
 ```{r}
-plot_ajuste(modelo)
+plot_ajuste(modelo) + labs(caption = "Figure 14. Predictions")
 ```
+
+
+Unlike IPSA we see a much better fit of the exchange rate to the empirical series, something very similar to what happened with inflation. In fact, this model, the one that occupies fewer parameters is the one that " follows closely the series". This tells us that learning from the series does not imply incorporating more variables into the model, but rather how much we can understand from the data generating process we are working with. For example, some of the key questions we have asked so far are: are the series stationary, do they have a trend, does adding more orders improve my prediction? 
 
 # References
 
