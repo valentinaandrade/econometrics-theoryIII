@@ -16,7 +16,7 @@ All the codes, projects and functions created can be downloaded from the [follow
   - [Proof of theorems](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/docs/problems/problemset1.pdf)
  
 
-- [Problem Set N°2](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset1.html)
+- [Problem Set N°2](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset2.html)
   - [Report](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset2.html)
   - [Replication codes](https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/input/code3)
   - [Figures](https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/input/code3/graphs)
