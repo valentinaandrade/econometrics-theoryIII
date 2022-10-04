@@ -1,9 +1,9 @@
 ---
 title: "Problem Set N°2"
 author: "Valentina Andrade"
-abstract: "The following report contains the exercises requested in problem set 2. In the first part you can download exercise solutions. In the second part, we study the Dornbush's exchange rate overshooting hypothesis.'"
+abstract: "The following report contains the exercises requested in problem set 2. In the first part you can download exercise solutions. In the second part, we study the Dornbush's exchange rate overshooting hypothesis. Dornbusch's overshooting hypothesis (1976) is an important tool for analyzing *exchange rate and monetary policy dynamic*. This report suggest a identification strategy (with VAR approach) that deals with simultaneity and long-run effects (neutrality assumption). Although previous research did not find clear effects (probably due to simultaneity biases), we found that a monetary policy shock has a strong and immediate effect on the exchange rate. Then,  exchange rate gradually depreciates back to the baseline. In conclusion, the results are **consistent with the overshooting hypothesis**'"
 
-date: September 29, 2022
+date: October 03, 2022
 output:
   prettydoc::html_pretty:
     theme: tactile
@@ -14,7 +14,7 @@ output:
 
 # Part 1 
 
-[Download document (excersises chapther 11)](https://drive.google.com/drive/u/0/folders/1RZOutpun_CCGriqZta94c639J7ycveYe)
+[Download document (excersises chapther 11)](https://drive.google.com/file/d/1s1iCfTpfZSHP4Fkagwbdc7EX7Lkvi1Xl/view?usp=sharing)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
@@ -263,7 +263,7 @@ ggplot(datos_long) +
     size = 1
     ) + 
   geom_line(aes(periodo, value), color = "gray60") + labs(y = "") + 
-  facet_wrap(vars(name), scales = "free_y", nrow = 2) 
+  facet_wrap(vars(name), scales = "free_y", ncol = 2) 
 ```
 
 *Figure 1*. Trimestral series `nominal_gdp`, `real_gdp`, `m1_money_supply`, `m2_money_supply`, `overnight_leading_rate`, `exchange_rate`  (1992- 2022)
@@ -299,28 +299,92 @@ Now, we will discuss three dimensions with respect to the baseline specification
 
 ### 1. Specification of the VAR
 
+As suggest **Table 1**, we can use four instead of three lags in the VAR.
+
+**Table 1.** VAR lag order selection criteria (see Canova, 2017)
+
+| lag | logL | LR | p-val | AIC | SIC | HQ |
+|---|---|---|---|---|---|---|
+| 0 | 539.7989 | NaN | NaN | -8.5774 | -8.3954 | -8.5035 |
+| 1 | 1066.5545 | 1002.5348 | 0.0000 | -16.8154 | -16.2695 | -16.5937 |
+| 2 | 1157.6946 | 167.5803 | 0.0000 | -18.0273 | -17.1176 | -17.6578 |
+| 3 | 1171.9885 | 25.3601 | 0.0637 | -17.9998 | -16.7261 | -17.4824 |
+| 4 | 1186.1752 | 24.2548 | 0.0841 | -17.9706 | -16.3330 | -17.3053 |
+| 5 | 1206.6663 | 33.7110 | 0.0059 | -18.0430 | -16.0415 | -17.2300 |
+| 6 | 1218.4732 | 18.6625 | 0.2866 | -17.9754 | -15.6100 | -17.0145 |
+| 7 | 1222.5283 | 6.1481 | 0.9864 | -17.7827 | -15.0534 | -16.6740 |
+| 8 | 1234.9839 | 18.0807 | 0.3192 | -17.7255 | -14.6323 | -16.4690 |
+
+![](../input/code3/graphs/change-lags.png)
+
+**Figure 5** Canada: response to a monetary policy shock, using VAR approach and Bank of Canada data (**dotted line** corresponds to the estimation with 4 lags) 
+
+Figure 5 shows what happens to the IRF when the lags are changed. We can see that the difference in the response to the shock is not substantially different. Although at the beginning it is clear that the distance between the two estimates is different, however, as the quarters increase, this distance becomes shorter. 
+
 ### 2. Choice of variables included in the VAR
+
+![](../input/code3/graphs/robust.png)
+**Figure 6** Canada: response to a monetary policy shock, using VAR approach and Bank of Canada data
+
+As a robustness exercise, 7 different models are estimated, each of them represented by the lines in Figure 6. The baseline model corresponds to the one between the red and purple zone. If we read the models from top to bottom
+
+- **Model 2**: The terms of trade are incorporated in the VAR.
+
+- **Model 3**: Internal and external terms of trade are incorporated. 
+
+- **Model 1**: baseline
+
+- **Model 4**: in addition to what is indicated in model 3, the logarithm of the money supply M1 is added.
+
+- **Model 5**: As an alternative specification to inflation, Canada's deflation is incorporated.
+
+- **Model 7**: in addition to what is indicated in model 5, the external rate (FED) is incorporated. 
+
+As in the exercise in Figure 5, we can see that with changes in the specification (incorporating or removing variables from the VAR) the response of TCR to a monetary policy shock does not change in any way. This same exercise was carried out with different specifications with and without trend variables and the results were similar. 
 
 ### 3. Fitted values
 
 
 ![](../input/code3/graphs/figure1.png)
-**Figure 4**. Fitted value for baseline model 
+**Figure 7**. Fitted value for baseline model 
 
-Figure 4 presents the evolution over time of the variables used in the baseline model (blue line) and their fitted values (red dotted line). As we can see, the model variables, i.e., government spending, inflation, overnight rate and real exchange rate, are predicted with a good fit. We can only identify that in the real exchange rate there is a small lag. 
+Figure 7 presents the evolution over time of the variables used in the baseline model (blue line) and their fitted values (red dotted line). As we can see, the model variables, i.e., government spending, inflation, overnight rate and real exchange rate, are predicted with a good fit. We can only identify that in the real exchange rate there is a small lag. 
 
 This result is consistent even when the specifications of the model are changed (see figures 3, 6,9,12,15,18,21 in the [GitHub repository](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/input/code3/graphs)).
 
+## Conclusion 
+
+Dornbusch's overshooting hypothesis (1976) is an important tool for analyzing *exchange rate and monetary policy dynamic*. This report suggest a identification strategy (with VAR approach) that deals with simultaneity and long-run effects (neutrality assumption). Although previous research did not find clear effects (probably due to simultaneity biases), we found that a monetary policy shock has a strong and immediate effect on the exchange rate. Then,  exchange rate gradually depreciates back to the baseline. In conclusion, the results are **consistent with the overshooting hypothesis**. 
 
 # References
 
 [Bjørnland, H. C. (2009). Monetary policy and exchange rate overshooting: Dornbusch was right after all. Journal of International Economics, 79(1), 64-77.](https://www.sciencedirect.com/science/article/pii/S0022199609000841)
 
+Canova, F., Paustian, M., 2007. Measurement with Some Theory: Using Sign Restrictions to Evaluate Business Cycle Models. Manuscript. Universitat Pompeu Fabra
+
+Clarida, R., Galí, J., Gertler, M., 2000. Monetary policy rules and macroeconomic stability: evidence and some theory. Quarterly Journal of Economics 115, 147–180.
+
+Cushman, D.O., Zha, T., 1997. Identifying monetary policy in a small open economy under flexible exchange rates. Journal of Monetary Economics 39, 433–448.
+
+**Dornbusch, R., 1976. Expectations and exchange rate dynamics. Journal of Political Economy 84, 1161–1176.**
+
+Eichenbaum, M., Evans, C., 1995. Some empirical evidence on the effects of shocks to monetary policy on exchange rates. Quarterly Journal of Economics 110, 975–1010
+
+Favero, C.A., Marcellino, M., 2004. Large Datasets, Small Models and Monetary Policy in Europe. Manuscript, Bocconi University
+
+
 [*Hamilton, J. D. (1994). Time series analysis. Princeton University Press. Chapters 1-3*](https://books.google.cl/books?hl=es&lr=&id=BeryDwAAQBAJ&oi=fnd&pg=PP1&dq=hamilton+time+series+analysis&ots=BgCP8_bUhj&sig=3zy12_T3kgYPWPja8y5F1lJPZWQ&redir_esc=y#v=onepage&q=hamilton%20time%20series%20analysis&f=false)
 
 [*Bockwell, P. J., & Davis, R. A. (1991). Time Series: Theory and Methods.. Chapter 3*](https://books.google.cl/books?hl=es&lr=&id=TVIpBgAAQBAJ&oi=fnd&pg=PA1&dq=brockwell+time+series+theory+and+methods&ots=nl2yfymmW6&sig=ktnul2bhi-vKD0GpvtG7KJIbol8&redir_esc=y#v=onepage&q=brockwell%20time%20series%20theory%20and%20methods&f=false)
 
+**Sims, C.A., 1980. Macroeconomics and reality. Econometrica 48, 1–48.**
+
+Sims, C.A., 1992. Interpreting the macroeconomic time series facts: the effects of
+monetary policy. European Economic Review 36, 975–1011.
+
 [*Hayashi, F. (2011). Econometrics. Princeton University Press.*](https://books.google.cl/books?hl=es&lr=&id=QyIW8WUIyzcC&oi=fnd&pg=PP2&dq=hayashi+econometrics&ots=SFv20wuaK4&sig=kS7vf0fprmxEkGeJriM1xuX2B44&redir_esc=y#v=onepage&q=hayashi%20econometrics&f=false)
+
+Zettelmeyer, J., 2004. The impact of monetary policy on the exchange rate: evidence from three small open economies. Journal of Monetary Economics 51, 635–652
 
 ## Apendix A. The original model
 
@@ -365,13 +429,26 @@ $$\bar \theta (\lambda, \delta , \sigma , \pi)=\pi(\sigma /\lambda + \delta)/2 +
 
 ![](../input/code3/graphs/figure2.png)
 
+**Model 1**
+
+
 ![](../input/code3/graphs/figure5.png)
 ![](../input/code3/graphs/figure8.png)
 
+**Model 2**
+
 ![](../input/code3/graphs/figure11.png)
+
+**Model 3**
 
 ![](../input/code3/graphs/figure14.png)
 
+**Model 4**
+
 ![](../input/code3/graphs/figure17.png)
 
+**Model 5**
+
 ![](../input/code3/graphs/figure20.png)
+
+**Model 6**
