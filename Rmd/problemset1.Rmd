@@ -3,7 +3,7 @@ title: "Problem Set N°1"
 author: "Valentina Andrade"
 abstract: "The following report contains the exercises requested in problem set 1. In the first part you can download the proofs of some properties and/or results related to AR, MA and ARMA process. In the second part, the Box-Jenkins methodology is applied to study three series of the Chilean economy: inflation, exchange rate and IPSA. One of the most important results of both exercises is related to how to apprehend time series structures, either theoretically or empirically we can say something that Wold 's theorem had already anticipated '*'Any stationary series can beexpressed as the sum of two components: a perfectly forecastable series and a moving average of possily infinite order'*'"
 
-date: August 27, 2011
+date: "2022"
 output:
   prettydoc::html_pretty:
     theme: tactile
@@ -14,7 +14,7 @@ output:
 
 # Part 1 
 
-[Download document (proofs 1 to 6)](https://drive.google.com/drive/u/0/folders/1RZOutpun_CCGriqZta94c639J7ycveYe)
+[Download document (proofs 1 to 6)](https://drive.google.com/file/d/1ch0D-Bei586snE9eHK8ZRNiY6YjGgJlD/view?usp=sharing)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
