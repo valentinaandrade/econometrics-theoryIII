@@ -24,6 +24,10 @@ All the codes, projects and functions created can be downloaded from the [follow
   - [Proof of theorems](https://drive.google.com/file/d/1s1iCfTpfZSHP4Fkagwbdc7EX7Lkvi1Xl/view?usp=sharing)
 
 
+- [Problem Set N°3](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset3-real.html)
+ 
+
+
 # Material de clases
 - [Dynamic Programming - Summary](https://valentinaandrade.github.io/macroeconomics-theory/practice/ayudantias/ayu3/dp-intro.pdf)
 
