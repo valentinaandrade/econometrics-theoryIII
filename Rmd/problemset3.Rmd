@@ -1,0 +1,169 @@
+---
+title: "Problem Set N°3"
+author: "Valentina Andrade"
+abstract: "The following report contains the exercises requested in problem set 3 and 4."
+
+date: December 07, 2022
+output:
+  prettydoc::html_pretty:
+    theme: tactile
+    highlight: github
+    math: katex
+
+---
+
+El boom de los commodities o súper ciclo de los commodities fue un período de fuerte subida de los precios de gran cantidad de materias primas (alimentos, petróleo, metales, químicos, energía) que se produjo a comienzos del siglo XXI, aproximadamente entre 2000 y 2014
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
+pacman::p_load(tidyverse, lubridate, patchwork, forecast, tseries, ggfortify, xts, readxl, showtext, magrittr,sarbcurrent,changepoint, strucchange)
+devtools::install_gitlab("KevinKotze/sarbcurrent")
+theme_set(theme_minimal(base_size = 14))
+```
+
+
+```{r load data, echo = F}
+data <- read_excel("../input/Precios de commodities.xlsx")
+```
+
+
+```{r, echo = F}
+data <- data %>%
+  pivot_longer(cols = -`Commodity Name`&-`Unit Name`, names_to = "year", values_to = "price") %>% mutate(year = str_replace(year, "M", "-"),year = as_date(paste(year, "-01", sep=""))) %>% 
+  na.omit(price)
+
+data2 <- data %>% filter(`Commodity Name` == "Copper")
+```
+
+# Explorar datos
+
+
+```{r plot0, echo = F}
+data %>% filter(`Commodity Name` %in% c("Corn", "Fish Meal","Sorghum","Sunflower Oil","Bananas", "Tea, Colombo",  "Cotton", "Gold","Copper", "APSP crude oil($/bbl)", "Gasoline")) %>% 
+  ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
+```
+
+
+```{r plot1, echo = F}
+data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Price Copper (US Dollars)") 
+```
+
+## Cambio en la media y varianza de la serie
+
+Antes de estudiar el cambio estructural obtenemos una gráfica que nos permite explorar el cambio en el punto de la media y varianza del **crecimiento de los precios** de la serie seleccionada (Cobre)
+
+```{r, echo = F}
+growth_a <- data2 %>%
+    select(year, price) %>%
+    mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
+    filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+    pull(growth) %>%
+    cpt.meanvar(., method = "PELT")
+
+plot(growth_a, type = "l", cpt.col = "blue", xlab = "Index", cpt.width = 4)
+```
+
+Para encontrar el punto de cambio mostramos la siguiente tabla
+
+```{r tab, echo = FALSE}
+data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
+  filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+  slice(changepoint::cpts(growth_a)) %>% 
+  kableExtra::kable(., caption = "Tabla 1. Puntos de cambio", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
+
+
+# Problem set 3: Valores Críticos y Poder del Test
+
+- Valores críticos del test de Perron con un quiebre en 33% de la muestra. Con
+tamaños de muestra 100, y 393.
+
+```{r perron1, echo=FALSE}
+pp.test(data2$price)
+```
+
+```{r break, echo = FALSE}
+strucchange::breakpoints(data2$price ~ data2$year, breaks = 3) # breaks 33% de la muestra
+```
+
+```{r, echo = F}
+qlr <- strucchange::Fstats(price ~ lag(price), data = data2)
+strucchange::breakpoints(qlr)
+```
+```{r, echo =FALSE}
+strucchange::sctest(qlr, type = "supF")
+```
+
+```{r plotqrl, echo = FALSE}
+plot(qlr)
+```
+
+
+
+```{r}
+sa_dat <- data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1),
+         grow_lag = lag(growth)) %>%
+  drop_na()
+
+sa_qlr <- strucchange::Fstats(growth ~ grow_lag, data = sa_dat)
+strucchange::breakpoints(sa_qlr)
+strucchange::sctest(sa_qlr, type = "supF")
+```
+```{r}
+plot(sa_qlr)
+```
+
+
+```{r}
+data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1),
+         grow_lag = lag(growth)) %>%
+  drop_na() %>%
+  slice(sa_qlr$breakpoint)
+```
+
+
+```{r}
+sa_cusum <- efp(growth ~ grow_lag, data = sa_dat, type = "OLS-CUSUM")
+plot(sa_cusum)
+```
+
+```{r}
+sa_bp <- breakpoints(growth ~ grow_lag, data = sa_dat, breaks = 5)
+summary(sa_bp)  # where the breakpoints are
+```
+
+```{r}
+plot(sa_bp, breaks = 3)
+```
+
+
+```{r}
+data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1),
+         grow_lag = lag(growth)) %>%
+  drop_na() %>%
+  slice(sa_bp$breakpoint)
+```
+
+- Haga un programa (Stata, Gauss, Matlab, R) que le permita derivar la
+pérdida de poder del test de Perron a medida que el DGP se aproxima a una
+raíz unitaria. Con tamaños de muestra 100, y 393 y con un quiebre en 33%
+de la muestra
+
+# Problem set 4

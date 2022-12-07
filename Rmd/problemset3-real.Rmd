@@ -1,0 +1,236 @@
+---
+title: "Problem Set N°3"
+author: "Valentina Andrade"
+abstract: "The following report contains the exercises requested in problem set 3 and 4."
+
+date: December 07, 2022
+output:
+  prettydoc::html_pretty:
+    theme: tactile
+    highlight: github
+    math: katex
+
+---
+
+El boom de los commodities o súper ciclo de los commodities fue un período de fuerte subida de los precios de gran cantidad de materias primas (alimentos, petróleo, metales, químicos, energía) que se produjo a comienzos del siglo XXI, aproximadamente entre 2000 y 2014
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
+pacman::p_load(tidyverse, lubridate, patchwork, forecast, tseries, ggfortify, xts, readxl, showtext, magrittr,sarbcurrent,changepoint, strucchange)
+devtools::install_gitlab("KevinKotze/sarbcurrent")
+theme_set(theme_minimal(base_size = 14))
+```
+
+
+```{r load data, echo = F}
+data <- read_excel("../input/Precios de commodities.xlsx")
+```
+
+
+```{r, echo = F}
+data <- data %>%
+  pivot_longer(cols = -`Commodity Name`&-`Unit Name`, names_to = "year", values_to = "price") %>% mutate(year = str_replace(year, "M", "-"),year = as_date(paste(year, "-01", sep=""))) %>% 
+  na.omit(price)
+
+data2 <- data %>% filter(`Commodity Name` == "Copper")
+```
+
+# Explorar datos
+
+
+```{r plot0, echo = F}
+data %>% filter(`Commodity Name` %in% c("Corn", "Fish Meal","Sorghum","Sunflower Oil","Bananas", "Tea, Colombo",  "Cotton", "Gold","Copper", "APSP crude oil($/bbl)", "Gasoline")) %>% 
+  ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
+```
+
+
+```{r plot1, echo = F}
+data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Price Copper (US Dollars)") 
+```
+
+## Cambio en la media y varianza de la serie
+
+Antes de estudiar el cambio estructural obtenemos una gráfica que nos permite explorar el cambio en el punto de la media y varianza
+
+**Nivel de precios** de la serie seleccionada
+
+```{r, echo = F}
+growth_a <- data2 %>%
+    select(year, price) %>%
+    filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+    pull(price) %>%
+    cpt.meanvar(., method = "PELT")
+
+plot(growth_a, type = "l", cpt.col = "blue", xlab = "Year", ylab = "Copper prices", cpt.width = 4)
+```
+
+```{r tab1, echo = FALSE}
+data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
+  filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+  slice(changepoint::cpts(growth_a)) %>% 
+  kableExtra::kable(., caption = "Tabla 1. Puntos de cambio", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
+
+
+
+**Crecimiento de los precios** de la serie seleccionada (Cobre)
+
+```{r, echo = F}
+growth_a <- data2 %>%
+    select(year, price) %>%
+    mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
+    filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+    pull(growth) %>%
+    cpt.meanvar(., method = "PELT")
+
+plot(growth_a, type = "l", cpt.col = "blue", xlab = "Year", ylab = "Copper prices", cpt.width = 4)
+```
+
+Para encontrar el punto de cambio mostramos la siguiente tabla
+
+```{r tab, echo = FALSE}
+data2 %>%
+  select(year, price) %>%
+  mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
+  filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
+  slice(changepoint::cpts(growth_a)) %>% 
+  kableExtra::kable(., caption = "Tabla 1. Puntos de cambio", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
+
+
+# Problem set 3: Valores Críticos y Poder del Test
+
+Bai and Perron (1998) structural break analysis for linear regression test or asses deviations from stability in classical linear regression model. This is designed to look for  time breaks (or more than one break) in linear regression using the algorithm proposed in Bai and Perron (2003). This algorithm efficient find the least squares of multiple breakpoints in a linear regression model of the form
+
+$$y_t  = \beta X_t' + \mu_t$$
+The algorithm assume that there are *m* breakpoints, where the coefficients shift from one stable regression relationship to a different one. Then, there are *m+1* segments in which the regression coefficients are constant, and the model can be rewritten as
+
+$$y_t  = \beta X_t' + \mu_t ~~~~~~~~~~~~~~ where ~ T=T_{j-1} + 1,..., i_j, ~~ j = 1, ...., m+1$$
+
+For a fixed value $T_1$ for the first breakpoint, there are large of $j$ **number of partitions** for the range $[T_1 + 1, ..., T]$.The algorithm for computing the optimal breakpoints, given an arbitrary number of breaks, is based on a **dynamic programming approach** (underlying idea of Bellman principle): the computer estimate triangular sum of squared residuals (*RSS*), which gives he residual sum of squares for segment starting at the observation $T_1$ and ending at $T$ ($T_1 < T$)
+
+After, the partitions can be examined efficiently  without redoing any of the actual estimations.Also, the distribution function used for construct confidence intervals for the break points is describe in Bai (1997) and the implementation in Zeleis et al. (2003)
+
+```{r echo = F}
+x <- data2 %>% 
+    mutate(date = round(decimal_date(year),2)) 
+prices <- ts(x$price, start =1990, end = 2022, frequency = 12)
+plot(prices)
+```
+
+
+```{r, echo = F, eval = F }
+fs.prices <- Fstats(prices ~ 1)
+plot(fs.prices)
+breakpoints(fs.prices)
+lines(breakpoints(fs.prices))
+```
+
+
+```{r, echo = F}
+bp.prices <- breakpoints(prices ~ 1) # encuentra breaks =3
+summary(bp.prices)
+## the BIC also chooses one breakpoint
+plot(bp.prices)
+breakpoints(bp.prices)
+```
+
+```{r, echo = F }
+## fit null hypothesis model and model with 1 breakpoint
+fm0 <- lm(prices ~ 1)
+fm1 <- lm(prices ~ breakfactor(bp.prices, breaks = 1))
+plot(prices)
+lines(ts(fitted(fm0), start = 1990), col = 3)
+lines(ts(fitted(fm1), start = 1990), col = 4)
+lines(bp.prices)
+## confidence interval
+ci.prices <- confint(bp.prices)
+lines(ci.prices)
+```
+
+```{r interval2, echo = F}
+ci.prices
+```
+## Samples T = 100 
+
+```{r, echo = F}
+prices2 <- data2 %>%
+  filter(year >= "2000-01-01"& year <= "2009-01-01") %>% 
+    mutate(date = round(decimal_date(year),2)) 
+prices2 <- ts(prices2$price, start =2000, end = 2009, frequency = 12)
+```
+
+
+```{r t100}
+bp.prices <- breakpoints(prices2 ~ 1) # encuentra breaks =3
+summary(bp.prices)
+## the BIC also chooses one breakpoint
+plot(bp.prices)
+breakpoints(bp.prices)
+```
+
+
+
+
+```{r, echo = F }
+## fit null hypothesis model and model with 1 breakpoint
+fm0 <- lm(prices2 ~ 1)
+fm1 <- lm(prices2 ~ breakfactor(bp.prices, breaks = 3))
+plot(prices2)
+lines(ts(fitted(fm0), start = 2000, end = 2009), col = 3)
+lines(ts(fitted(fm1), start = 2000, end = 2009), col = 4)
+lines(bp.prices)
+## confidence interval
+ci.prices <- confint(bp.prices)
+lines(ci.prices)
+```
+
+```{r interval, echo = F}
+ci.prices
+```
+## Analysis of critical values at T = 100 and T = 393
+
+**Instrucciones**
+
+
+- Haga un programa (Stata, Gauss, Matlab, R) que le permita derivar la
+pérdida de poder del test de Perron a medida que el proceso generador de los datos se aproxima a una raíz unitaria. Con tamaños de muestra 100, y 393 y con un quiebre en 33%
+de la muestra
+
+```{r}
+prices <- ts(data2$price, start = 1990, end = 2022, frequency = 1)
+bp = breakpoints(prices~1, h =3)
+```
+
+
+
+# Problem set 4
+
+
+# Reference
+
+- Bai J. (1994), Least Squares Estimation of a Shift in Linear Processes, Journal of Time Series Analysis, 15, 453-472.
+
+- Bai J. (1997a), Estimating Multiple Breaks One at a Time, Econometric Theory, 13, 315-352.
+
+- Bai J. (1997b), Estimation of a Change Point in Multiple Regression Models, Review of Economics and Statistics, 79, 551-563.
+
+- Bai J., Perron P. (1998), Estimating and Testing Linear Models With Multiple Structural Changes, Econometrica, 66, 47-78.
+
+- Bai J., Perron P. (2003), Computation and Analysis of Multiple Structural Change Models, Journal of Applied Econometrics, 18, 1-22.
+
+- Zeileis A., Kleiber C., Krämer W., Hornik K. (2003), Testing and Dating of Structural Changes in Practice, Computational Statistics and Data Analysis, 44, 109-123. doi:10.1016/S0167-9473(03)00030-6.
+
+- Zeileis A., Shah A., Patnaik I. (2010), Testing, Monitoring, and Dating Structural Changes in Ex-change Rate Regimes, Computational Statistics and Data Analysis, 54(6), 1696–1706. doi:10.1016/j.csda.2009.12.005.
