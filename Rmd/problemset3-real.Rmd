@@ -255,15 +255,9 @@ bp = breakpoints(prices~1, h =3)
 
 # Problem set 4
 
-- Use los resultados de la Tarea 3 para hacer test de raíces unitarias para los precios de commodities.
+## Unit Root commodity price
 
-- Utilice el procedimiento de Engle-Granger para estudiar la posible
-cointegración entre pares de precios de commodities (tanto entre los bienes
-relacionados como en los no relacionados). Si encuentra que hay
-cointegración, es evidencia de Commodity Price Co-movement, un tópico
-controversial desde la publicación del estudio de Pindyck, R. S., and
-Rotemberg, J.J. (1990). The Excess Co-Movement of Commodity Prices.
-Economic Journal, 100 (403), 1173-1189
+
 
 
 ## Engle- Granger test procedure
@@ -333,3 +327,14 @@ adf(ts(residual,start =1990, end = 2022, frequency = 12), k = 1, int = T, trend 
 - Zeileis A., Shah A., Patnaik I. (2010), Testing, Monitoring, and Dating Structural Changes in Ex-change Rate Regimes, Computational Statistics and Data Analysis, 54(6), 1696–1706. doi:10.1016/j.csda.2009.12.005.
 
 - https://www.sciencedirect.com/science/article/pii/S0301420721000155
+
+
+# Instrucciones
+
+- Utilice el procedimiento de Engle-Granger para estudiar la posible
+cointegración entre pares de precios de commodities (tanto entre los bienes
+relacionados como en los no relacionados). Si encuentra que hay
+cointegración, es evidencia de Commodity Price Co-movement, un tópico
+controversial desde la publicación del estudio de Pindyck, R. S., and
+Rotemberg, J.J. (1990). The Excess Co-Movement of Commodity Prices.
+Economic Journal, 100 (403), 1173-1189
