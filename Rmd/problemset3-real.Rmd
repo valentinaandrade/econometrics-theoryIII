@@ -16,9 +16,27 @@ El boom de los commodities o súper ciclo de los commodities fue un período de 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
-pacman::p_load(tidyverse, lubridate, patchwork, forecast, tseries, ggfortify, xts, readxl, showtext, magrittr,sarbcurrent,changepoint, strucchange)
+pacman::p_load(tidyverse, lubridate, patchwork, forecast, tseries, ggfortify, xts, readxl, showtext, magrittr,sarbcurrent,changepoint, strucchange, dynlm)
 devtools::install_gitlab("KevinKotze/sarbcurrent")
 theme_set(theme_minimal(base_size = 14))
+```
+
+```{r functions, echo =T}
+"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
+# NB:  returns conventional lm summary so p-values for adf test are wrong!
+    require(dynlm)
+    dx <- diff(x)
+    formula <- paste("dx ~ L(x)")
+    if(k > 0)
+        formula <- paste(formula," + L(dx,1:k)")
+    if(trend){
+        s <- time(x)
+        t <- ts(s - s[1],start = s[1],freq = frequency(x))
+        formula <- paste(formula," + t")
+        }
+    if(!int) formula <- paste(formula," - 1")
+    summary(dynlm(as.formula(formula)))
+    }
 ```
 
 
@@ -33,13 +51,14 @@ data <- data %>%
   na.omit(price)
 
 data2 <- data %>% filter(`Commodity Name` == "Copper")
+data3 <- data %>% filter(`Commodity Name` == "Zinc")
 ```
 
 # Explorar datos
 
 
 ```{r plot0, echo = F}
-data %>% filter(`Commodity Name` %in% c("Corn", "Fish Meal","Sorghum","Sunflower Oil","Bananas", "Tea, Colombo",  "Cotton", "Gold","Copper", "APSP crude oil($/bbl)", "Gasoline")) %>% 
+data %>% filter(`Commodity Name` %in% c("Gold","Copper", "Silver", "Platinum", "Palladium")) %>% 
   ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     aes(xintercept = fecha),
     data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
@@ -48,13 +67,31 @@ data %>% filter(`Commodity Name` %in% c("Corn", "Fish Meal","Sorghum","Sunflower
 ```
 
 
-```{r plot1, echo = F}
+```{r plotnon, echo = F}
+data %>% filter(`Commodity Name` %in% c("Copper", "Nickel", "Aluminum", "Zinc", "Lead", "Tin")) %>% 
+  ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
+```
+
+```{r plot20, echo = F}
 data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     aes(xintercept = fecha),
     data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
     color = "darkred",
-    size = 1.2) +labs(y = "Price Copper (US Dollars)") 
+    size = 1.2) +labs(y = "Copper's price (US Dollars)") 
 ```
+
+```{r plot1, echo = F}
+data3 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
+    aes(xintercept = fecha),
+    data = tibble(fecha = ymd("2000-01-01", "2014-01-01")),
+    color = "darkred",
+    size = 1.2) +labs(y = "Zinc price (US Dollars)") 
+```
+
 
 ## Cambio en la media y varianza de la serie
 
@@ -218,6 +255,58 @@ bp = breakpoints(prices~1, h =3)
 
 # Problem set 4
 
+- Use los resultados de la Tarea 3 para hacer test de raíces unitarias para los precios de commodities.
+
+- Utilice el procedimiento de Engle-Granger para estudiar la posible
+cointegración entre pares de precios de commodities (tanto entre los bienes
+relacionados como en los no relacionados). Si encuentra que hay
+cointegración, es evidencia de Commodity Price Co-movement, un tópico
+controversial desde la publicación del estudio de Pindyck, R. S., and
+Rotemberg, J.J. (1990). The Excess Co-Movement of Commodity Prices.
+Economic Journal, 100 (403), 1173-1189
+
+
+## Engle- Granger test procedure
+
+Now we focus on cointegration, using Engle- Granger test. The null hypothesis for the Engle Granger test is that **no cointegration exists**. The null hypothesis is written,
+
+- $H_0$: No cointegration exists
+- $H_1$: Cointegration exists
+
+
+In general, Engle-Granger in R can be donde in three steps, as follows:
+
+1. Pre-test the variables for the presence of unit roots (done above) and check if they are integrated of the same order
+
+2. Regress the long run equilibrium model of the commodity price pairs. Plot also the residuals versus lagged residuals.
+
+3. Proceed with a unit root test on the residuals, i.e. test whether the residuals are I(0). Notice that the only difference from the traditional ADF to the Engle-Granger test are the **critical values**. The critical values to be used here are no longer the same provided by Dickey-Fuller, but instead provided by Engle and Yoo (1987) and [others (see approximated critical values in Table B.9, Hamilton 1994)](http://www.econ.uiuc.edu/~econ508/DFtable.pdf). **This happens because the residuals above are not the actual error terms**, but estimated values from the long run equilibrium equation of commodity price pairs.
+
+4. Some authors (e.g., Enders, 1995) consider a fourth step, consisting in the estimation of error-correction models and checking of models adequacy.
+
+```{r engledata, echo =F}
+x <- data3 %>% 
+    mutate(date = round(decimal_date(year),2)) 
+zinc <- ts(x$price, start =1990, end = 2022, frequency = 12)
+```
+
+
+```{r engle1, echo = F}
+engle<-lm(prices~zinc) 
+summary(engle)
+```
+
+
+```{r residengle, echo =F}
+residual<-resid(engle)
+ts.plot(data2$date,residual, gpars=list(main="Copper vs. Zinc: Is there cointegration?", xlab="year", ylab="residuals"))
+```
+
+
+```{r adfresid, echo =F}
+adf(ts(residual,start =1990, end = 2022, frequency = 12), k = 1, int = T, trend = T)
+```
+
 
 # Reference
 
@@ -234,3 +323,5 @@ bp = breakpoints(prices~1, h =3)
 - Zeileis A., Kleiber C., Krämer W., Hornik K. (2003), Testing and Dating of Structural Changes in Practice, Computational Statistics and Data Analysis, 44, 109-123. doi:10.1016/S0167-9473(03)00030-6.
 
 - Zeileis A., Shah A., Patnaik I. (2010), Testing, Monitoring, and Dating Structural Changes in Ex-change Rate Regimes, Computational Statistics and Data Analysis, 54(6), 1696–1706. doi:10.1016/j.csda.2009.12.005.
+
+- https://www.sciencedirect.com/science/article/pii/S0301420721000155
