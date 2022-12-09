@@ -247,7 +247,7 @@ pérdida de poder del test de Perron a medida que el proceso generador de los da
 de la muestra
 
 ```{r}
-prices <- ts(data2$price, start = 1990, end = 2022, frequency = 1)
+prices <- ts(data2$price, start = 1990, end = 2022, frequency = 12)
 bp = breakpoints(prices~1, h =3)
 ```
 
@@ -268,10 +268,18 @@ Economic Journal, 100 (403), 1173-1189
 
 ## Engle- Granger test procedure
 
-Now we focus on cointegration, using Engle- Granger test. The null hypothesis for the Engle Granger test is that **no cointegration exists**. The null hypothesis is written,
+Now we focus on cointegration, using Engle- Granger (1987) test. The null hypothesis for the Engle Granger test is that **no cointegration exists**. The null hypothesis is written,
 
 - $H_0$: No cointegration exists
 - $H_1$: Cointegration exists
+
+More formally, consider the problem of testing the cointegration of two series $\lbrace x_t , y_t\rbrace$, where $x_t$ is the price process of Zinc and $y_t$ the price process of Copper. If we knew the coefficents of the cointegration relationship, that is, if **we hypothesized** for example, 
+
+$$z_t = y_t - \alpha - \beta \cdot x_t$$
+
+was stationary then the situation would be relatively simple we would simply apply the Dickey-Fuller as the **augmented Dickey-Fuller** (ADF) test to the new variable $z_t$. If we reject the null hypothesis that the series $z_t$ has a unit root, having already concluded that the hypotheses that $x_t$ and $y_t$ themselves cannot be rejected, then we may conclude that there is evidence for the cointegration of $\lbrace x_t , y_t\rbrace$.
+
+It may seem very implausible that we might *“know”* $\alpha, \beta$. As a first step we estimate the parameters using the usual least squares procedure, and then proceed as before using $$z_t = \hat{y_t} - \alpha - \beta \cdot \hat{x_t}$$. The only difference is that we need to do some adjustment in the original *ADF critical values* is necessary. For the problem set, these new [critical values are provided in Table B.9 from Hamilton (1994)](http://www.econ.uiuc.edu/~econ508/DFtable.pdf). There are additional complications due to trends. If we have more than two series we need to apply a general approach developed by Johansen (1991)
 
 
 In general, Engle-Granger in R can be donde in three steps, as follows:
