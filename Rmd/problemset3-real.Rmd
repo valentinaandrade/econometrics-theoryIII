@@ -77,6 +77,8 @@ data %>% filter(`Commodity Name` %in% c("Gold","Copper", "Silver", "Platinum", "
     color = "darkred",
     size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
 ```
+
+
 **Figure 1**. Commodity prices (US Dollars)
 
 
@@ -88,6 +90,8 @@ data %>% filter(`Commodity Name` %in% c("Copper", "Nickel", "Aluminum", "Zinc", 
     color = "darkred",
     size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
 ```
+
+
 **Figure 2.** Commodity price  (US Dollars)
 
 
@@ -98,6 +102,8 @@ data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     color = "darkred",
     size = 1.2) +labs(y = "Copper's price (US Dollars)") 
 ```
+
+
 **Figure 3**. Copper price (US Dollars)
 
 ```{r plot1, echo = F}
@@ -107,6 +113,7 @@ data3 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     color = "darkred",
     size = 1.2) +labs(y = "Zinc price (US Dollars)") 
 ```
+
 **Figure 4.** Zinc prices (US Dollars)
 
 ## Mean and variance change
@@ -131,7 +138,7 @@ data2 %>%
   mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
   filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
   slice(changepoint::cpts(growth_a)) %>% 
-  kableExtra::kable(., caption = "Tabla 1. Puntos de cambio", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable(., caption = "Tabla 1. Change points", col.names = c("Year", "Price", "Price growth")) %>%
   kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
@@ -157,7 +164,7 @@ data2 %>%
   mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
   filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
   slice(changepoint::cpts(growth_a)) %>% 
-  kableExtra::kable(., caption = "Table 1. Change points", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable(., caption = "Table 2. Change points", col.names = c("Year", "Price", "Price growth")) %>%
   kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
@@ -182,6 +189,8 @@ x <- data2 %>%
 prices <- ts(x$price, start =1990, end = 2022, frequency = 12)
 plot(prices)
 ```
+
+
 **Figure 5**. Copper proces
 
 ```{r, echo = F, eval = F }
@@ -213,6 +222,8 @@ lines(bp.prices)
 ci.prices <- confint(bp.prices)
 lines(ci.prices)
 ```
+
+
 **Figure 7.** Hypothesis test of structutal change
 
 ```{r interval2, echo = F}
@@ -247,6 +258,8 @@ summary(bp.prices)
 plot(bp.prices)
 breakpoints(bp.prices)
 ```
+
+
 **Figure 9**. BIC and SRR (T = 100)
 
 
@@ -298,7 +311,9 @@ plot(me3)
 ```
 
 
-Table 3. Critical Values - Bai and Perron
+**Table 3. Critical Values - Bai and Perron**
+
+
 |  | 1% | 5% | 10% |
 |---|---|---|---|
 | Sample T = 393  (1 break) | 3.368 | 2.795 | 2.501 |
@@ -307,7 +322,7 @@ Table 3. Critical Values - Bai and Perron
 | Sample T = 100  (3 breaks) | 0.543 | 0.210 | 0.031 |
 
 
-able 3 shows the result of the critical values, using the process created in R `monitor.R`. In the first instance the otutput of the function that takes as argument the number of breaks, confidence intervals and sample size is shown.
+Table 3 shows the result of the critical values, using the process created in R `monitor.R`. In the first instance the otutput of the function that takes as argument the number of breaks, confidence intervals and sample size is shown.
 
 As a result we can see that the value for 1 and 3 breaks is the same, since the true process is described by 3 breaks. More importantly, the critical values for the test with a smaller sample is smaller, which leads us to say that the probability of rejecting the null hypothesis of existence of a break becomes smaller. Thus, the test loses statistical power. Evidently this result is not only due to the asymptotic properties of the tests (moreover it is difficult to say that one is in the asymptotic and the other is not). Rather, the point is that with a smaller sample size it is difficult to recognize all the points in the history of the series. This would result in biased estimators and a worse fit to the model since the different breaks in the series are captured to a lesser extent. 
 
@@ -419,13 +434,4 @@ With this we can say that there is **evidence of cointegration** between Zinc an
 
 - [Galán-Gutiérrez, J. A., & Martín-García, R. (2021). Cointegration between the structure of copper futures prices and Brexit. Resources Policy, 71, 101998.](https://www.sciencedirect.com/science/article/pii/S0301420721000155)
 
-
-# Instrucciones
-
-- Utilice el procedimiento de Engle-Granger para estudiar la posible
-cointegración entre pares de precios de commodities (tanto entre los bienes
-relacionados como en los no relacionados). Si encuentra que hay
-cointegración, es evidencia de Commodity Price Co-movement, un tópico
-controversial desde la publicación del estudio de Pindyck, R. S., and
-Rotemberg, J.J. (1990). The Excess Co-Movement of Commodity Prices.
-Economic Journal, 100 (403), 1173-1189
+-  Pindyck, R. S., and Rotemberg, J.J. (1990). The Excess Co-Movement of Commodity Prices. Economic Journal, 100 (403), 1173-1189
