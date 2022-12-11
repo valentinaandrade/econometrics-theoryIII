@@ -1,9 +1,9 @@
 ---
-title: "Problem Set N°3"
+title: "Problem Set N°3 and 4"
 author: "Valentina Andrade"
-abstract: "The following report contains the exercises requested in problem set 3 and 4."
+abstract: "The following report contains the exercises requested in problem set 3 and 4. The first part deals with issues related to breakpoint inference (point estimate and its critical values). In the second part we conduct analyses related to the presence of unit roots and cointegration between the Copper and Zinc series.As a main result we can note that although the Bai and Perron (2003) test is consistent in its estimation independent of the arbitrarily defined partition, it is highly sensitive to sample size. One evidence of this is the loss of power of the test when the process converges to a unit root, since the probability of rejecting the null hypothesis becomes larger (the rejection zone grows). This point is relatively important since as shown in the problem set 4, the Augmented Dickey and Fuller test and the Phillps Perron test show the selected series to be non-stationary. Conditional on this result, through the Engle-Granger methodology, a cointegration analysis is conducted. As shown in the literature discussed below, Copper and Zinc are shown to have a co-movement trend (cointegration evidence). "
 
-date: December 07, 2022
+date: December 11, 2022
 output:
   prettydoc::html_pretty:
     theme: tactile
@@ -12,7 +12,15 @@ output:
 
 ---
 
-El boom de los commodities o súper ciclo de los commodities fue un período de fuerte subida de los precios de gran cantidad de materias primas (alimentos, petróleo, metales, químicos, energía) que se produjo a comienzos del siglo XXI, aproximadamente entre 2000 y 2014
+# Presentation
+
+This report contains the exercises performed in problem sets 3 and 4. The [following functions were created for their complete development](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/R)
+
+- Main code `problemset3.Rmd`
+- Augmented Dickey Fuller `adf.R`
+- Breakpoints `breakpoints.R``
+- Critical values `critvals.R` and `critvals-monitoring.R`
+- Monitor critical values `critvals-monitoring.R`
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, dev = 'svg', message = FALSE)
@@ -21,9 +29,8 @@ devtools::install_gitlab("KevinKotze/sarbcurrent")
 theme_set(theme_minimal(base_size = 14))
 ```
 
-```{r functions, echo =T}
+```{r functions, echo =F}
 "adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
-# NB:  returns conventional lm summary so p-values for adf test are wrong!
     require(dynlm)
     dx <- diff(x)
     formula <- paste("dx ~ L(x)")
@@ -54,8 +61,13 @@ data2 <- data %>% filter(`Commodity Name` == "Copper")
 data3 <- data %>% filter(`Commodity Name` == "Zinc")
 ```
 
-# Explorar datos
+# Explore data
 
+Figure 1 and 2 show the distribution of processes for metallic raw materials (financialized and non-financialized, respectively). As can be noticed, several of them seem to have a growth trend between the years 2000 and 2014. Moreover, as indicated by Galán and Martín, (2021)
+
+>"Co-movements involving macroeconomic variables and commodity prices have been observed for metals such as gold, silver, platinum and palladium (Batten et al., 2010), although some of those metals are less dependent than others on global macroeconomic indicators such as GDP and real interest rates (Chen 2010). "
+
+This is why these series are chosen for this work. Figure 3 and 4 show the two time series that will be deeply analyzed, mainly because the copper price seems to show recent evidence of cointegration with non-financialized metals. 
 
 ```{r plot0, echo = F}
 data %>% filter(`Commodity Name` %in% c("Gold","Copper", "Silver", "Platinum", "Palladium")) %>% 
@@ -65,6 +77,7 @@ data %>% filter(`Commodity Name` %in% c("Gold","Copper", "Silver", "Platinum", "
     color = "darkred",
     size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
 ```
+**Figure 1**. Commodity prices (US Dollars)
 
 
 ```{r plotnon, echo = F}
@@ -75,6 +88,8 @@ data %>% filter(`Commodity Name` %in% c("Copper", "Nickel", "Aluminum", "Zinc", 
     color = "darkred",
     size = 1.2) +labs(y = "Price (US Dollars)") + facet_wrap(vars(`Commodity Name`), scales = "free_y")
 ```
+**Figure 2.** Commodity price  (US Dollars)
+
 
 ```{r plot20, echo = F}
 data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
@@ -83,6 +98,7 @@ data2 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     color = "darkred",
     size = 1.2) +labs(y = "Copper's price (US Dollars)") 
 ```
+**Figure 3**. Copper price (US Dollars)
 
 ```{r plot1, echo = F}
 data3 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
@@ -91,13 +107,13 @@ data3 %>% ggplot(aes(x = year, y = price)) + geom_line()+   geom_vline(
     color = "darkred",
     size = 1.2) +labs(y = "Zinc price (US Dollars)") 
 ```
+**Figure 4.** Zinc prices (US Dollars)
 
+## Mean and variance change
 
-## Cambio en la media y varianza de la serie
+Before studying the structural change we obtain a graph that allows us to explore the change in the mean and variance point.
 
-Antes de estudiar el cambio estructural obtenemos una gráfica que nos permite explorar el cambio en el punto de la media y varianza
-
-**Nivel de precios** de la serie seleccionada
+**Price leve** of the selected time series
 
 ```{r, echo = F}
 growth_a <- data2 %>%
@@ -120,8 +136,7 @@ data2 %>%
 ```
 
 
-
-**Crecimiento de los precios** de la serie seleccionada (Cobre)
+**Price growth** of the selected time series
 
 ```{r, echo = F}
 growth_a <- data2 %>%
@@ -134,7 +149,7 @@ growth_a <- data2 %>%
 plot(growth_a, type = "l", cpt.col = "blue", xlab = "Year", ylab = "Copper prices", cpt.width = 4)
 ```
 
-Para encontrar el punto de cambio mostramos la siguiente tabla
+In a descriptive way we can find a change in the mean, reported in Table 1.
 
 ```{r tab, echo = FALSE}
 data2 %>%
@@ -142,12 +157,13 @@ data2 %>%
   mutate(growth = 100 * ((price / lag(price)) - 1)) %>%
   filter(year >= "2000-01-01" & year <= "2014-01-01") %>%
   slice(changepoint::cpts(growth_a)) %>% 
-  kableExtra::kable(., caption = "Tabla 1. Puntos de cambio", col.names = c("Year", "Price", "Price growth")) %>%
+  kableExtra::kable(., caption = "Table 1. Change points", col.names = c("Year", "Price", "Price growth")) %>%
   kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
+With this, we have evidence that there are 3 different averages: one before 2006, another between 2006 and 2009, and the last one around 2009. 
 
-# Problem set 3: Valores Críticos y Poder del Test
+# Problem set 3: Critical values and test power
 
 Bai and Perron (1998) structural break analysis for linear regression test or asses deviations from stability in classical linear regression model. This is designed to look for  time breaks (or more than one break) in linear regression using the algorithm proposed in Bai and Perron (2003). This algorithm efficient find the least squares of multiple breakpoints in a linear regression model of the form
 
@@ -166,7 +182,7 @@ x <- data2 %>%
 prices <- ts(x$price, start =1990, end = 2022, frequency = 12)
 plot(prices)
 ```
-
+**Figure 5**. Copper proces
 
 ```{r, echo = F, eval = F }
 fs.prices <- Fstats(prices ~ 1)
@@ -183,24 +199,38 @@ summary(bp.prices)
 plot(bp.prices)
 breakpoints(bp.prices)
 ```
+**Figure 6**. BIC and RSS
 
 ```{r, echo = F }
 ## fit null hypothesis model and model with 1 breakpoint
 fm0 <- lm(prices ~ 1)
 fm1 <- lm(prices ~ breakfactor(bp.prices, breaks = 1))
 plot(prices)
-lines(ts(fitted(fm0), start = 1990), col = 3)
-lines(ts(fitted(fm1), start = 1990), col = 4)
+lines(ts(fitted(fm0), start = 1990, frequency = 12), col = 3)
+lines(ts(fitted(fm1), start = 1990,frequency = 12), col = 4)
 lines(bp.prices)
 ## confidence interval
 ci.prices <- confint(bp.prices)
 lines(ci.prices)
 ```
+**Figure 7.** Hypothesis test of structutal change
 
 ```{r interval2, echo = F}
 ci.prices
 ```
+In summary, with all data
+
+- We have 3 breakpoints, as descriptive analysis suggested (2005-10 2010-7 2015-4). However, one of them is not between 2006 and 2009, but after 2009. 
+
+- The result shows that the participation with 3 breaks is the one that produces the least amount of waste and BIC.
+
+- Figure 7 supports our descriptive results. The 2005 breakpoint is reasonably precise, while the 2010 and 2015 breakpoints are not (see the confidence interval in red). This suggests that the second breakpoint in the series may indeed be in 2009. We can see this numerical result in the table that gives the confidence interval for the breakpoints in the last output. As we can notice the second breakpoint could be in 2009-12.
+
+
+
 ## Samples T = 100 
+
+We will now conduct the same analysis for a sample size of 100. It is important to note that in a context with uniariate roots the starting point is important (see Hamilton chapter 16). This is why we have defined that $y_0$ of prices will be in the year 2000. 
 
 ```{r, echo = F}
 prices2 <- data2 %>%
@@ -217,7 +247,7 @@ summary(bp.prices)
 plot(bp.prices)
 breakpoints(bp.prices)
 ```
-
+**Figure 9**. BIC and SRR (T = 100)
 
 
 
@@ -226,39 +256,90 @@ breakpoints(bp.prices)
 fm0 <- lm(prices2 ~ 1)
 fm1 <- lm(prices2 ~ breakfactor(bp.prices, breaks = 3))
 plot(prices2)
-lines(ts(fitted(fm0), start = 2000, end = 2009), col = 3)
-lines(ts(fitted(fm1), start = 2000, end = 2009), col = 4)
+lines(ts(fitted(fm0), start = 2000, end = 2009, frequency = 12), col = 3)
+lines(ts(fitted(fm1), start = 2000, end = 2009, frequency = 12), col = 4)
 lines(bp.prices)
 ## confidence interval
 ci.prices <- confint(bp.prices)
 lines(ci.prices)
 ```
+**Figure 10.** Hypothesis testing
 
 ```{r interval, echo = F}
 ci.prices
 ```
+In summary, with data T = 100
+
+- As we can see, the number of breakpoints decreases to only 2. However, the BIC information criterion distances itself from the sum of squared residuals, showing evidence of a lower fit of the data. 
+
+- This result is due to the fact that, as shown in Hamilton, for unit root processes the sample size is very relevant when estimating parameters. When the sample is finite the point estimation and distribution results change. 
+
+- Also, Figure 9 reports 2 breaks, but but one among them fails to reject the null hypothesis of the existence of a break. 
+
 ## Analysis of critical values at T = 100 and T = 393
 
-**Instrucciones**
-
-
-- Haga un programa (Stata, Gauss, Matlab, R) que le permita derivar la
-pérdida de poder del test de Perron a medida que el proceso generador de los datos se aproxima a una raíz unitaria. Con tamaños de muestra 100, y 393 y con un quiebre en 33%
-de la muestra
-
-```{r}
+```{r, echo = F}
 prices <- ts(data2$price, start = 1990, end = 2022, frequency = 12)
 bp = breakpoints(prices~1, h =3)
+monitor(strucchange::mefp(prices ~ 1, type = "OLS-CUSUM",h = 3, alpha = 0.01))
 ```
 
 
+```{r, echo=FALSE, eval = F}
+## the same in one function call
+me1 <- mefp(prices~1, data=data[1:385,,drop=FALSE], type="ME", h=1,
+alpha=0.05)
+## monitor the 50 next observations
+me2 <- monitor(me1, data=data[1:100,,drop=FALSE])
+plot(me2)
+# and now monitor on all data
+me3 <- monitor(me2, data=data)
+plot(me3)
+```
+
+
+Table 3. Critical Values - Bai and Perron
+|  | 1% | 5% | 10% |
+|---|---|---|---|
+| Sample T = 393  (1 break) | 3.368 | 2.795 | 2.501 |
+| Sample T = 393  (3 breaks) | 3.368 | 2.795 | 2.501 |
+| Sample T = 100  (1 break) | 0.543 | 0.210 | 0.031 |
+| Sample T = 100  (3 breaks) | 0.543 | 0.210 | 0.031 |
+
+
+able 3 shows the result of the critical values, using the process created in R `monitor.R`. In the first instance the otutput of the function that takes as argument the number of breaks, confidence intervals and sample size is shown.
+
+As a result we can see that the value for 1 and 3 breaks is the same, since the true process is described by 3 breaks. More importantly, the critical values for the test with a smaller sample is smaller, which leads us to say that the probability of rejecting the null hypothesis of existence of a break becomes smaller. Thus, the test loses statistical power. Evidently this result is not only due to the asymptotic properties of the tests (moreover it is difficult to say that one is in the asymptotic and the other is not). Rather, the point is that with a smaller sample size it is difficult to recognize all the points in the history of the series. This would result in biased estimators and a worse fit to the model since the different breaks in the series are captured to a lesser extent. 
 
 # Problem set 4
 
 ## Unit Root commodity price
 
 
+```{r engledata, echo =F}
+x <- data3 %>% 
+    mutate(date = round(decimal_date(year),2)) 
+zinc <- ts(x$price, start =1990, end = 2022, frequency = 12)
+```
 
+
+**Test for Copper**
+
+```{r adf1, echo = F}
+adf(prices)
+pp.test(prices)
+```
+
+
+**Test for Zinc**
+
+```{r adf2, echo = F}
+adf(zinc)
+pp.test(zinc)
+```
+
+
+Both results show that the null hypothesis of non-stationarity cannot be rejected. That is, either considering an i.i.d. distribution of the residuals (ADF) or an undefined one (Phillips-Perron) we can find that there is no evidence for stationarity. With this, we conclude that both Zinc and Copper have a unit root. In the next step we ask how do these integrated variables move together? For this we will use the Engle and Granger approach.
 
 ## Engle- Granger test procedure
 
@@ -273,7 +354,7 @@ $$z_t = y_t - \alpha - \beta \cdot x_t$$
 
 was stationary then the situation would be relatively simple we would simply apply the Dickey-Fuller as the **augmented Dickey-Fuller** (ADF) test to the new variable $z_t$. If we reject the null hypothesis that the series $z_t$ has a unit root, having already concluded that the hypotheses that $x_t$ and $y_t$ themselves cannot be rejected, then we may conclude that there is evidence for the cointegration of $\lbrace x_t , y_t\rbrace$.
 
-It may seem very implausible that we might *“know”* $\alpha, \beta$. As a first step we estimate the parameters using the usual least squares procedure, and then proceed as before using $$z_t = \hat{y_t} - \alpha - \beta \cdot \hat{x_t}$$. The only difference is that we need to do some adjustment in the original *ADF critical values* is necessary. For the problem set, these new [critical values are provided in Table B.9 from Hamilton (1994)](http://www.econ.uiuc.edu/~econ508/DFtable.pdf). There are additional complications due to trends. If we have more than two series we need to apply a general approach developed by Johansen (1991)
+It may seem very implausible that we might *“know”* $\alpha, \beta$. As a first step we estimate the parameters using the usual least squares procedure, and then proceed as before using $$z_t = \hat{y_t} - \alpha - \beta \cdot \hat{x_t}$$. The only difference is that we need to do some adjustment in the original *ADF critical values* is necessary. For the problem set, these new [critical values are provided in Table B.9 from Hamilton (1994)](http://www.econ.uiuc.edu/~econ508/DFtable.pdf). There are additional complications due to trends. If we have more than two series we need to apply a general approach developed by Johansen (1991).
 
 
 In general, Engle-Granger in R can be donde in three steps, as follows:
@@ -286,18 +367,15 @@ In general, Engle-Granger in R can be donde in three steps, as follows:
 
 4. Some authors (e.g., Enders, 1995) consider a fourth step, consisting in the estimation of error-correction models and checking of models adequacy.
 
-```{r engledata, echo =F}
-x <- data3 %>% 
-    mutate(date = round(decimal_date(year),2)) 
-zinc <- ts(x$price, start =1990, end = 2022, frequency = 12)
-```
 
+**Step 1**
 
 ```{r engle1, echo = F}
 engle<-lm(prices~zinc) 
 summary(engle)
 ```
 
+**Step 2**
 
 ```{r residengle, echo =F}
 residual<-resid(engle)
@@ -305,9 +383,22 @@ ts.plot(data2$date,residual, gpars=list(main="Copper vs. Zinc: Is there cointegr
 ```
 
 
+**Ste´p 3**
 ```{r adfresid, echo =F}
 adf(ts(residual,start =1990, end = 2022, frequency = 12), k = 1, int = T, trend = T)
+
+pp.test(ts(residual,start =1990, end = 2022, frequency = 12))
 ```
+Both results show that the null hypothesis of non-stationarity cannot be rejected. That is, either considering an i.i.d distribution of the residuals (ADF) or an undefined one (Phillips-Perron) we can find that there is no evidence for stationarity in the residuals. 
+
+With this we can say that there is **evidence of cointegration** between Zinc and Copper, a result that Galán and Martin (2021) had already shown recently in their paper. In summary
+
+- Copper is cointegrated with the value of its future prices.
+
+- Zinc also shows an integration structure
+
+- In turn, copper and zinc are cointegrated. This implies that they are two metals whose prices move together in the commodity market. 
+
 
 
 # Reference
@@ -326,7 +417,7 @@ adf(ts(residual,start =1990, end = 2022, frequency = 12), k = 1, int = T, trend 
 
 - Zeileis A., Shah A., Patnaik I. (2010), Testing, Monitoring, and Dating Structural Changes in Ex-change Rate Regimes, Computational Statistics and Data Analysis, 54(6), 1696–1706. doi:10.1016/j.csda.2009.12.005.
 
-- https://www.sciencedirect.com/science/article/pii/S0301420721000155
+- [Galán-Gutiérrez, J. A., & Martín-García, R. (2021). Cointegration between the structure of copper futures prices and Brexit. Resources Policy, 71, 101998.](https://www.sciencedirect.com/science/article/pii/S0301420721000155)
 
 
 # Instrucciones
