@@ -24,7 +24,10 @@ All the codes, projects and functions created can be downloaded from the [follow
   - [Proof of theorems](https://drive.google.com/file/d/1s1iCfTpfZSHP4Fkagwbdc7EX7Lkvi1Xl/view?usp=sharing)
 
 
-- [Problem Set N°3](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset3-real.html)
+- [Problem Set N°3y 4](https://htmlpreview.github.io/?https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset3-real.html)
+  - [Functions](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/R)
+  - [Replication code- Main code](https://github.com/valentinaandrade/econometrics-theoryIII/blob/main/Rmd/problemset3-real.Rmd)
+  - [Data](https://github.com/valentinaandrade/econometrics-theoryIII/tree/main/input)
  
 
 
